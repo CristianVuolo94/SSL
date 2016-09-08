@@ -5,9 +5,9 @@
 
 int main(int argc, char** argv) {
 
-	Tsimbolo vec[10];
+	t_simbolo vec[10];
 
-	Tsimbolo simbolo;
+	t_simbolo simbolo;
 
 	simbolo.lexema = strdup("A");
 	simbolo.token = strdup("identificador");

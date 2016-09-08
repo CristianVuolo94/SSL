@@ -77,3 +77,71 @@ void validaciones(int argc, char * argv){
 	}
 
 }
+
+int vg_estado = 0;
+char buffer[33];
+int i = 0;
+
+int automata(char s){
+
+	vg_estado = tabla[vg_estado][columna(s)];
+
+	if(vg_estado == 1 || vg_estado == 3){
+		buffer[i] = s;
+		i++;
+	}
+	if(vg_estado == 2){
+		if(esPalabraReservada(buffer)) hacerAlgo(buffer);
+		if(esIdentificadorCorreto(buffer)) agregarATS(buffer);
+		else printf("IDENTIFICADOR INCORRECTO: %s \n", &buffer);
+		limpiarBuffer();
+		buffer[i] = s;
+	}
+	if(vg_estado == 14 || vg_estado == 99) return 0;
+	else return 1;
+}
+
+int columna(char c){
+	if(isdigit(atoi(c))) return 1;
+	if(isalpha(c)) return 0;
+	switch(c){
+	case '+':
+		return 2;
+		break;
+	case '-':
+		return 3;
+		break;
+	case '(':
+		return 4;
+		break;
+	case ')':
+		return 5;
+		break;
+	case ',':
+		return 6;
+		break;
+	case ';':
+		return 7;
+		break;
+	case ':':
+		return 8;
+		break;
+	case '=':
+		return 9;
+		break;
+	case FDT: //nuestro FDT seria '\0' ??
+		return 10;
+		break;
+	case ' ':
+		return 11;
+		break;
+	}
+	return -1;
+}
+
+void limpiarBuffer(void){
+	int j;
+	for(j=0; 32; j++){
+		buffer[j] = ' ';
+	}
+}
