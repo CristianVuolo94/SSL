@@ -25,6 +25,8 @@ typedef struct{
 
 char* vg_script;
 int vg_size_script;
+
+
 void validaciones(int argc, char * argv);
 void procesarScript(char * argv);
 

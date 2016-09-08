@@ -31,11 +31,7 @@
 # Debug files
 *.dSYM/
 
-#.cproject files
-*.cproject
 
-#eclipse project files
-*.project
 
 #logs tp
 *.log
