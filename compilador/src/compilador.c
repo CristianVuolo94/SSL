@@ -78,32 +78,98 @@ void validaciones(int argc, char * argv){
 
 }
 
-int vg_estado = 0;
-char buffer[33];
-int i = 0;
-
 int automata(char s){
 
 	vg_estado = tabla[vg_estado][columna(s)];
 
+	//se ingresó un numero o letra
 	if(vg_estado == 1 || vg_estado == 3){
-		buffer[i] = s;
-		i++;
+		buffer[vg_desp] = s;
+		vg_desp++;
 	}
+
+	//se ingresó palabra reservada o identificador
 	if(vg_estado == 2){
 		if(esPalabraReservada(buffer)) hacerAlgo(buffer);
 		if(esIdentificadorCorreto(buffer)) agregarATS(buffer);
 		else printf("IDENTIFICADOR INCORRECTO: %s \n", &buffer);
 		limpiarBuffer();
-		buffer[i] = s;
+		buffer[vg_desp] = s;
 	}
-	if(vg_estado == 14 || vg_estado == 99) return 0;
+
+	//se ingresó una constante numerica
+	if(vg_estado == 4){
+		agregarATS(buffer);
+		limpiarBuffer();
+		buffer[vg_desp] = s;
+	}
+
+	//se detectó FDT
+	if(vg_estado == 13){
+		return FDT;
+	}
+
+	//error lexico
+	if(vg_estado == 14 || vg_estado == 99) return -1;
 	else return 1;
+
+	if((vg_estado > 4 && vg_estado < 11) || (vg_estado == 12)){ //ESTO ES LO MISMO QUE TODO LO COMENTADO ABAJO
+		limpiarBuffer();
+		if(vg_estado == 5) return SUMA;
+		if(vg_estado == 6) return RESTA;
+		if(vg_estado == 7) return PARENIZQUIERDO;
+		if(vg_estado == 8) return PARENDERECHO;
+		if(vg_estado == 9) return COMA;
+		if(vg_estado == 10) return PUNTOYCOMA;
+		if(vg_estado == 12) return ASIGNACION;
+	}
+
+	if(vg_estado == 11){
+			buffer[vg_desp] = s;
+			vg_desp ++;
+	}
+
+	/*if(vg_estado == 5){
+		limpiarBuffer();
+		return SUMA;
+	}
+
+	if(vg_estado == 6){
+		limpiarBuffer();
+		return RESTA;
+	}
+
+	if(vg_estado == 7){
+		limpiarBuffer();
+		return PARENIZQUIERDO;
+	}
+
+	if(vg_estado == 8){
+		limpiarBuffer();
+		return PARENDERECHO;
+	}
+
+	if(vg_estado == 9){
+		limpiarBuffer();
+		return COMA;
+	}
+
+	if(vg_estado == 10){
+		limpiarBuffer();
+		return PUNTOYCOMA;
+	}
+
+	if(vg_estado == 12){
+		limpiarBuffer();
+		return ASIGNACION;
+	}*/
 }
 
 int columna(char c){
-	if(isdigit(atoi(c))) return 1;
+
 	if(isalpha(c)) return 0;
+	if(isdigit(atoi(c))) return 1;
+
 	switch(c){
 	case '+':
 		return 2;
@@ -129,7 +195,7 @@ int columna(char c){
 	case '=':
 		return 9;
 		break;
-	case FDT: //nuestro FDT seria '\0' ??
+	case '\0':
 		return 10;
 		break;
 	case ' ':
@@ -140,8 +206,9 @@ int columna(char c){
 }
 
 void limpiarBuffer(void){
-	int j;
-	for(j=0; 32; j++){
-		buffer[j] = ' ';
+	int i;
+	for(i=0; 32; i++){
+		buffer[i] = ' ';
 	}
+	vg_desp=0;
 }
