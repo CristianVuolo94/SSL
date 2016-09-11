@@ -1,8 +1,9 @@
 
 #include "compilador.h"
 int vg_estado = 0;
+int script_desp=0;
 char buffer[35];
-int vg_desp = 0;
+int buffer_desp = 0;
 int tabla [15][13] = 	   {{1,3,5,6,7,8,9,10,11,14,13,0},
 							{1,1,2,2,2,2,2,2,2,2,2,2},
 							{99,99,99,99,99,99,99,99,99,99,99,99},
@@ -96,6 +97,7 @@ void validaciones(int argc, char * argv){
 }
 
 void inicializarTablaSimbolos(){
+
 	tablaDeSimbolos = list_create();
 
 	t_simbolo* simbolo=malloc(sizeof(t_simbolo));
@@ -103,20 +105,20 @@ void inicializarTablaSimbolos(){
 	simbolo->token=strdup("Palabra Reservada");
 	list_add(tablaDeSimbolos,simbolo);
 
-	t_simbolo* simbolo=malloc(sizeof(t_simbolo));
-	simbolo->lexema=strdup("escribir");
-	simbolo->token=strdup("Palabra Reservada");
-	list_add(tablaDeSimbolos,simbolo);
+	t_simbolo* simbolo2=malloc(sizeof(t_simbolo));
+	simbolo2->lexema=strdup("escribir");
+	simbolo2->token=strdup("Palabra Reservada");
+	list_add(tablaDeSimbolos,simbolo2);
 
-	t_simbolo* simbolo=malloc(sizeof(t_simbolo));
-	simbolo->lexema=strdup("inicio");
-	simbolo->token=strdup("Palabra Reservada");
-	list_add(tablaDeSimbolos,simbolo);
+	t_simbolo* simbolo3=malloc(sizeof(t_simbolo));
+	simbolo3->lexema=strdup("inicio");
+	simbolo3->token=strdup("Palabra Reservada");
+	list_add(tablaDeSimbolos,simbolo3);
 
-	t_simbolo* simbolo=malloc(sizeof(t_simbolo));
-	simbolo->lexema=strdup("fin");
-	simbolo->token=strdup("Palabra Reservada");
-	list_add(tablaDeSimbolos,simbolo);
+	t_simbolo* simbolo4=malloc(sizeof(t_simbolo));
+	simbolo4->lexema=strdup("fin");
+	simbolo4->token=strdup("Palabra Reservada");
+	list_add(tablaDeSimbolos,simbolo4);
 }
 
 int esPalabraReservada(char *buffer){
@@ -124,77 +126,160 @@ int esPalabraReservada(char *buffer){
 	int desplazamiento;
 
 	for(desplazamiento=0;list_size(tablaDeSimbolos);desplazamiento++){
+
 		t_simbolo* unSimbolo = (t_simbolo*)list_get(tablaDeSimbolos,desplazamiento);
-		if(strcmp(unSimbolo->lexema,buffer)==0) return 1;
+		if(strcmp(unSimbolo->lexema,buffer)==0){
+			return 1;
+		}
 	}
 
 	return 0;
 
 }
 int	esIdentificadorCorreto(char *buffer){
+	if(strlen(buffer)>32){
+		return 0;
+	}
+	return 1;
 
-
+}
+void agregarIdentificadorATS(char *buffer){
+	t_simbolo* simbolo = malloc(sizeof(t_simbolo));
+	strcpy(simbolo->lexema,buffer);
+	simbolo->token=strdup("Identificador");
+	list_add(tablaDeSimbolos,simbolo);
+}
+void agregarConstanteATS(char* buffer){
+	t_simbolo* simbolo = malloc(sizeof(t_simbolo));
+	strcpy(simbolo->lexema,buffer);
+	simbolo->token=strdup("Constante");
+	list_add(tablaDeSimbolos,simbolo);
 }
 
 
-TOKEN automata(char s){
+TOKEN automata(){
 
-	vg_estado = tabla[vg_estado][columna(s)];
+	while(1){
+		printf("ESTADOA=%d\n",vg_estado);
+		printf("LETRA%c\n",vg_script[script_desp]);
+		vg_estado = tabla[vg_estado][columna(vg_script[script_desp])];
+		printf("ESTADOB=%d\n",vg_estado);
+		//se ingresó un numero o letra
+		if(vg_estado == 1){
 
-	//se ingresó un numero o letra
-	if(vg_estado == 1){
+			buffer[buffer_desp] = vg_script[script_desp];
+			buffer_desp++;
 
-		buffer[vg_desp] = s;
-		if(strlen(buffer)>=33)
-		vg_desp++;
+		}
+
+		if(vg_estado == 3){
+
+				buffer[buffer_desp] = vg_script[script_desp];
+				buffer_desp++;
+		}
+
+
+		//se ingresó palabra reservada o identificador
+		if(vg_estado == 2){
+			if(esPalabraReservada(buffer)){
+
+				if(strcmp(buffer,"leer")==0){
+					script_desp--;
+					limpiarBuffer();
+					return LEER;
+				}
+
+				if(strcmp(buffer,"escribir")==0){
+					script_desp--;
+					limpiarBuffer();
+					return ESCRIBIR;
+				}
+
+				if(strcmp(buffer,"inicio")==0){
+
+					script_desp--;
+
+					limpiarBuffer();
+
+					return INICIO;
+				}
+
+				if(strcmp(buffer,"fin")==0){
+					//script_desp--;
+					printf("BARRAENE %c ashpa\n",vg_script[script_desp]);
+					limpiarBuffer();
+					return FIN;
+				}
+			}
+
+
+			if(esIdentificadorCorreto(buffer)==1){
+				script_desp--;
+				agregarIdentificadorATS(buffer);
+				limpiarBuffer();
+				return ID;
+			}
+			else printf("IDENTIFICADOR INCORRECTO: %s \n", buffer);
+
+
+		}
+
+		//se ingresó una constante numerica
+		if(vg_estado == 4){
+			script_desp--;
+			agregarConstanteATS(buffer);
+			limpiarBuffer();
+			return CONSTANTE;
+
+		}
+
+		//se detectó FDT
+		if(vg_estado == 13){
+			return FDT;
+		}
+
+		//error lexico
+		if(vg_estado == 14 || vg_estado == 99) return -1;
+//		else return 1;// para que?
+
+		if((vg_estado > 4 && vg_estado < 11) || (vg_estado == 12)){
+
+
+			if(vg_estado == 5){
+				limpiarBuffer();
+				return SUMA;
+			}
+			if(vg_estado == 6){
+				limpiarBuffer();
+				return RESTA;
+			}
+			if(vg_estado == 7){
+				limpiarBuffer();
+				return PARENIZQUIERDO;
+			}
+			if(vg_estado == 8){
+				limpiarBuffer();
+				return PARENDERECHO;
+			}
+			if(vg_estado == 9){
+				limpiarBuffer();
+				return COMA;
+			}
+			if(vg_estado == 10){
+				limpiarBuffer();
+				return PUNTOYCOMA;
+			}
+			if(vg_estado == 12){
+				limpiarBuffer();
+				return ASIGNACION;
+			}
+		}
+		if(vg_estado == 11){
+			buffer[buffer_desp] = vg_script[script_desp];
+			buffer_desp ++;
+		}
+		script_desp++;
 	}
-
-	if(vg_estado == 3){
-
-			buffer[vg_desp] = s;
-			vg_desp++;
-	}
-
-	//se ingresó palabra reservada o identificador
-	if(vg_estado == 2){
-		if(esPalabraReservada(buffer)) return buffer;
-		if(esIdentificadorCorreto(buffer)) agregarATS(buffer);
-//		else printf("IDENTIFICADOR INCORRECTO: %s \n", &buffer);
-		limpiarBuffer();
-		buffer[vg_desp] = s;
-	}
-
-	//se ingresó una constante numerica
-	if(vg_estado == 4){
-//		agregarATS(buffer);
-		limpiarBuffer();
-		buffer[vg_desp] = s;
-	}
-
-	//se detectó FDT
-	if(vg_estado == 13){
-		return FDT;
-	}
-
-	//error lexico
-	if(vg_estado == 14 || vg_estado == 99) return -1;
-	else return 1;
-
-	if((vg_estado > 4 && vg_estado < 11) || (vg_estado == 12)){
-		limpiarBuffer();
-		if(vg_estado == 5) return SUMA;
-		if(vg_estado == 6) return RESTA;
-		if(vg_estado == 7) return PARENIZQUIERDO;
-		if(vg_estado == 8) return PARENDERECHO;
-		if(vg_estado == 9) return COMA;
-		if(vg_estado == 10) return PUNTOYCOMA;
-		if(vg_estado == 12) return ASIGNACION;
-	}
-	if(vg_estado == 11){
-			buffer[vg_desp] = s;
-			vg_desp ++;
-	}
-
 }
 
 int columna(char c){
@@ -233,15 +318,19 @@ int columna(char c){
 	case ' ':
 		return 11;
 		break;
+	case '\n':
+		return 11;
+		break;
 	}
+
 	return -1;
 }
 
-void limpiarBuffer(void){
+void limpiarBuffer(){
 	int i;
-	for(i=0; 32; i++){
-		buffer[i] = ' ';
+	for(i=0; i<35; i++){
+		buffer[i] = '\0';
 	}
-	vg_desp = 0;
+	buffer_desp = 0;
 	vg_estado = 0;
 }

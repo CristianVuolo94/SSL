@@ -36,7 +36,8 @@ t_list* tablaDeSimbolos;
 void validaciones(int argc, char * argv);
 void procesarScript(char * argv);
 int columna(char c);
-void limpiarBuffer(void);
+void limpiarBuffer();
 void inicializarTablaSimbolos();
+TOKEN automata();
 
 #endif /* COMPILADOR_H_ */
