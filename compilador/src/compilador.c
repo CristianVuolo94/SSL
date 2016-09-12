@@ -1,7 +1,6 @@
 
 #include "compilador.h"
 int vg_estado = 0;
-int script_desp=0;
 char buffer[35];
 int buffer_desp = 0;
 int tabla [15][13] = 	   {{1,3,5,6,7,8,9,10,11,14,13,0},
@@ -19,6 +18,7 @@ int tabla [15][13] = 	   {{1,3,5,6,7,8,9,10,11,14,13,0},
 							{99,99,99,99,99,99,99,99,99,99,99,99},
 							{99,99,99,99,99,99,99,99,99,99,99,99},
 							{99,99,99,99,99,99,99,99,99,99,99,99}};
+vg_script_desp=0;
 
 void procesarScript(char* argv){
 
@@ -55,6 +55,7 @@ FILE * script = fopen(argv, "rb+");
 
 	}
 }
+
 
 
 int validarNombreScript(char * nombreScript){
@@ -121,11 +122,71 @@ void inicializarTablaSimbolos(){
 	list_add(tablaDeSimbolos,simbolo4);
 }
 
+void retornoScanner(int valor){
+	switch(valor){
+	case INICIO:{
+			printf("					inicio\n");
+			break;
+	}
+	case FIN:{
+			printf("					fin\n");
+			break;
+	}
+	case LEER:{
+			printf("					leer\n");
+			break;
+	}
+	case ESCRIBIR:{
+			printf("					escribir\n");
+			break;
+	}
+	case ID:{
+			printf("					id\n");
+			break;
+	}
+	case CONSTANTE:{
+			printf("					constante\n");
+			break;
+	}
+	case PARENIZQUIERDO:{
+			printf("					parentesis izquierdo\n");
+			break;
+	}
+	case PARENDERECHO:{
+			printf("					parentesis derecho\n");
+			break;
+	}
+	case PUNTOYCOMA:{
+			printf("					punto y coma\n");
+			break;
+	}
+	case COMA:{
+			printf("					coma\n");
+			break;
+	}
+	case ASIGNACION:{
+			printf("					asignacion\n");
+			break;
+	}
+	case SUMA:{
+			printf("					suma\n");
+			break;
+	}
+	case RESTA:{
+			printf("					resta\n");
+			break;
+	}
+	case FDT:{
+			printf("					fdt\n");
+			break;
+	}
+	}
+}
+
 int esPalabraReservada(char *buffer){
 
 	int desplazamiento;
-
-	for(desplazamiento=0;list_size(tablaDeSimbolos);desplazamiento++){
+	for(desplazamiento=0;desplazamiento<list_size(tablaDeSimbolos);desplazamiento++){
 
 		t_simbolo* unSimbolo = (t_simbolo*)list_get(tablaDeSimbolos,desplazamiento);
 		if(strcmp(unSimbolo->lexema,buffer)==0){
@@ -143,70 +204,76 @@ int	esIdentificadorCorreto(char *buffer){
 	return 1;
 
 }
+
+
+
 void agregarIdentificadorATS(char *buffer){
-	t_simbolo* simbolo = malloc(sizeof(t_simbolo));
-	strcpy(simbolo->lexema,buffer);
-	simbolo->token=strdup("Identificador");
-	list_add(tablaDeSimbolos,simbolo);
+
+	bool perteneceLista (t_simbolo* simbolo) {return strcmp( simbolo->lexema,buffer) == 0 ; }
+
+	if(!list_any_satisfy(tablaDeSimbolos,(void*)perteneceLista)){
+		t_simbolo* simbolo = malloc(sizeof(t_simbolo));
+		simbolo->lexema=strdup(buffer);
+		simbolo->token=strdup("Identificador");
+		list_add(tablaDeSimbolos,simbolo);
+	}
+
 }
+
 void agregarConstanteATS(char* buffer){
-	t_simbolo* simbolo = malloc(sizeof(t_simbolo));
-	strcpy(simbolo->lexema,buffer);
-	simbolo->token=strdup("Constante");
-	list_add(tablaDeSimbolos,simbolo);
+
+	bool perteneceLista (t_simbolo* simbolo) {return strcmp( simbolo->lexema,buffer) == 0 ; }
+
+	if(!list_any_satisfy(tablaDeSimbolos,(void*)perteneceLista)){
+		t_simbolo* simbolo = malloc(sizeof(t_simbolo));
+		simbolo->lexema=strdup(buffer);
+		simbolo->token=strdup("Constante");
+		list_add(tablaDeSimbolos,simbolo);
+	}
 }
 
 
-TOKEN automata(){
+TOKEN scanner(){
 
 	while(1){
-		printf("ESTADOA=%d\n",vg_estado);
-		printf("LETRA%c\n",vg_script[script_desp]);
-		vg_estado = tabla[vg_estado][columna(vg_script[script_desp])];
-		printf("ESTADOB=%d\n",vg_estado);
+
+		vg_estado = tabla[vg_estado][columna(vg_script[vg_script_desp])];
 		//se ingresó un numero o letra
 		if(vg_estado == 1){
 
-			buffer[buffer_desp] = vg_script[script_desp];
+			buffer[buffer_desp] = vg_script[vg_script_desp];
 			buffer_desp++;
 
 		}
 
 		if(vg_estado == 3){
 
-				buffer[buffer_desp] = vg_script[script_desp];
+				buffer[buffer_desp] = vg_script[vg_script_desp];
 				buffer_desp++;
 		}
 
 
 		//se ingresó palabra reservada o identificador
 		if(vg_estado == 2){
+
 			if(esPalabraReservada(buffer)){
 
 				if(strcmp(buffer,"leer")==0){
-					script_desp--;
 					limpiarBuffer();
 					return LEER;
 				}
 
 				if(strcmp(buffer,"escribir")==0){
-					script_desp--;
 					limpiarBuffer();
 					return ESCRIBIR;
 				}
 
 				if(strcmp(buffer,"inicio")==0){
-
-					script_desp--;
-
 					limpiarBuffer();
-
 					return INICIO;
 				}
 
 				if(strcmp(buffer,"fin")==0){
-					//script_desp--;
-					printf("BARRAENE %c ashpa\n",vg_script[script_desp]);
 					limpiarBuffer();
 					return FIN;
 				}
@@ -214,7 +281,6 @@ TOKEN automata(){
 
 
 			if(esIdentificadorCorreto(buffer)==1){
-				script_desp--;
 				agregarIdentificadorATS(buffer);
 				limpiarBuffer();
 				return ID;
@@ -226,7 +292,6 @@ TOKEN automata(){
 
 		//se ingresó una constante numerica
 		if(vg_estado == 4){
-			script_desp--;
 			agregarConstanteATS(buffer);
 			limpiarBuffer();
 			return CONSTANTE;
@@ -247,38 +312,45 @@ TOKEN automata(){
 
 			if(vg_estado == 5){
 				limpiarBuffer();
+				vg_script_desp++;
 				return SUMA;
 			}
 			if(vg_estado == 6){
 				limpiarBuffer();
+				vg_script_desp++;
 				return RESTA;
 			}
 			if(vg_estado == 7){
 				limpiarBuffer();
+				vg_script_desp++;
 				return PARENIZQUIERDO;
 			}
 			if(vg_estado == 8){
 				limpiarBuffer();
+				vg_script_desp++;
 				return PARENDERECHO;
 			}
 			if(vg_estado == 9){
 				limpiarBuffer();
+				vg_script_desp++;
 				return COMA;
 			}
 			if(vg_estado == 10){
 				limpiarBuffer();
+				vg_script_desp++;
 				return PUNTOYCOMA;
 			}
 			if(vg_estado == 12){
 				limpiarBuffer();
+				vg_script_desp++;
 				return ASIGNACION;
 			}
 		}
 		if(vg_estado == 11){
-			buffer[buffer_desp] = vg_script[script_desp];
+			buffer[buffer_desp] = vg_script[vg_script_desp];
 			buffer_desp ++;
 		}
-		script_desp++;
+		vg_script_desp++;
 	}
 }
 

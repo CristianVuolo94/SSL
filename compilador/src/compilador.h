@@ -29,6 +29,7 @@ typedef struct{
 //             VARIABLES GLOBALES									//////
 char* vg_script;													//////
 int vg_size_script;													//////
+int vg_script_desp;													//////
 //////////////////////////////////////////////////////////////////////////
 
 t_list* tablaDeSimbolos;
@@ -38,6 +39,9 @@ void procesarScript(char * argv);
 int columna(char c);
 void limpiarBuffer();
 void inicializarTablaSimbolos();
-TOKEN automata();
+TOKEN scanner();
+void retornoScanner(int valor);
+
+
 
 #endif /* COMPILADOR_H_ */
