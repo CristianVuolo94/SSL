@@ -29,7 +29,7 @@ typedef struct{
 //             VARIABLES GLOBALES									//////
 char* vg_script;													//////
 int vg_size_script;													//////
-extern int vg_script_desp;													//////
+extern int vg_script_desp;											//////
 //////////////////////////////////////////////////////////////////////////
 
 t_list* tablaDeSimbolos;
