@@ -25,12 +25,12 @@ typedef struct{
 	char* lexema;
 }t_simbolo;
 
-//////////////////////////////////////////////////////////////////////////
-//             VARIABLES GLOBALES									//////
-char* vg_script;													//////
-int vg_size_script;													//////
-extern int vg_script_desp;											//////
-//////////////////////////////////////////////////////////////////////////
+
+/*             VARIABLES GLOBALES								*/
+char* vg_script;
+int vg_size_script;
+extern int vg_script_desp;
+
 
 t_list* tablaDeSimbolos;
 

@@ -12,8 +12,8 @@ int main(int argc, char** argv) {
 	}
 
 
-	//acordarse de liberar lista(tabla)
-	free(vg_script);//Hacer mas lindo later
+/*	acordarse de liberar lista(tabla) */
+	free(vg_script); /*Hacer mas lindo later*/
 
 return 1;
 

@@ -102,23 +102,23 @@ void inicializarTablaSimbolos(){
 	tablaDeSimbolos = list_create();
 
 	t_simbolo* simbolo=malloc(sizeof(t_simbolo));
-	simbolo->lexema=strdup("leer");
-	simbolo->token=strdup("Palabra Reservada");
+	simbolo->lexema=(char*)strdup("leer");
+	simbolo->token=(char*)strdup("Palabra Reservada");
 	list_add(tablaDeSimbolos,simbolo);
 
 	t_simbolo* simbolo2=malloc(sizeof(t_simbolo));
-	simbolo2->lexema=strdup("escribir");
-	simbolo2->token=strdup("Palabra Reservada");
+	simbolo2->lexema=(char*)strdup("escribir");
+	simbolo2->token=(char*)strdup("Palabra Reservada");
 	list_add(tablaDeSimbolos,simbolo2);
 
 	t_simbolo* simbolo3=malloc(sizeof(t_simbolo));
-	simbolo3->lexema=strdup("inicio");
-	simbolo3->token=strdup("Palabra Reservada");
+	simbolo3->lexema=(char*)strdup("inicio");
+	simbolo3->token=(char*)strdup("Palabra Reservada");
 	list_add(tablaDeSimbolos,simbolo3);
 
 	t_simbolo* simbolo4=malloc(sizeof(t_simbolo));
-	simbolo4->lexema=strdup("fin");
-	simbolo4->token=strdup("Palabra Reservada");
+	simbolo4->lexema=(char*)strdup("fin");
+	simbolo4->token=(char*)strdup("Palabra Reservada");
 	list_add(tablaDeSimbolos,simbolo4);
 }
 
@@ -213,8 +213,8 @@ void agregarIdentificadorATS(char *buffer){
 
 	if(!list_any_satisfy(tablaDeSimbolos,(void*)perteneceLista)){
 		t_simbolo* simbolo = malloc(sizeof(t_simbolo));
-		simbolo->lexema=strdup(buffer);
-		simbolo->token=strdup("Identificador");
+		simbolo->lexema=(char*)strdup(buffer);
+		simbolo->token=(char*)strdup("Identificador");
 		list_add(tablaDeSimbolos,simbolo);
 	}
 
@@ -226,8 +226,8 @@ void agregarConstanteATS(char* buffer){
 
 	if(!list_any_satisfy(tablaDeSimbolos,(void*)perteneceLista)){
 		t_simbolo* simbolo = malloc(sizeof(t_simbolo));
-		simbolo->lexema=strdup(buffer);
-		simbolo->token=strdup("Constante");
+		simbolo->lexema=(char*)strdup(buffer);
+		simbolo->token=(char*)strdup("Constante");
 		list_add(tablaDeSimbolos,simbolo);
 	}
 }
@@ -238,7 +238,7 @@ TOKEN scanner(){
 	while(1){
 
 		vg_estado = tabla[vg_estado][columna(vg_script[vg_script_desp])];
-		//se ingresó un numero o letra
+/*		se ingresó un numero o letra */
 		if(vg_estado == 1){
 
 			buffer[buffer_desp] = vg_script[vg_script_desp];
@@ -253,7 +253,7 @@ TOKEN scanner(){
 		}
 
 
-		//se ingresó palabra reservada o identificador
+/*		se ingresó palabra reservada o identificador */
 		if(vg_estado == 2){
 
 			if(esPalabraReservada(buffer)){
@@ -290,7 +290,7 @@ TOKEN scanner(){
 
 		}
 
-		//se ingresó una constante numerica
+/*		se ingresó una constante numerica */
 		if(vg_estado == 4){
 			agregarConstanteATS(buffer);
 			limpiarBuffer();
@@ -298,14 +298,14 @@ TOKEN scanner(){
 
 		}
 
-		//se detectó FDT
+/*		se detectó FDT */
 		if(vg_estado == 13){
 			return FDT;
 		}
 
-		//error lexico
+/*		error lexico */
 		if(vg_estado == 14 || vg_estado == 99) return -1;
-//		else return 1;// para que?
+
 
 		if((vg_estado > 4 && vg_estado < 11) || (vg_estado == 12)){
 
