@@ -21,7 +21,7 @@ PARENDERECHO, PUNTOYCOMA, COMA, ASIGNACION, SUMA, RESTA, FDT
 } TOKEN;
 
 typedef struct{
-	char* token;
+	TOKEN token;
 	char* lexema;
 }t_simbolo;
 

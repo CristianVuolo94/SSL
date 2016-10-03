@@ -3,33 +3,41 @@
 int vg_estado = 0;
 char buffer[35];
 int buffer_desp = 0;
-int tabla [15][13] = 	   {{1,3,5,6,7,8,9,10,11,14,13,0},
-							{1,1,2,2,2,2,2,2,2,2,2,2},
-							{99,99,99,99,99,99,99,99,99,99,99,99},
-							{4,3,4,4,4,4,4,4,4,4,4,4},
-							{99,99,99,99,99,99,99,99,99,99,99,99},
-							{99,99,99,99,99,99,99,99,99,99,99,99},
-							{99,99,99,99,99,99,99,99,99,99,99,99},
-							{99,99,99,99,99,99,99,99,99,99,99,99},
-							{99,99,99,99,99,99,99,99,99,99,99,99},
-							{99,99,99,99,99,99,99,99,99,99,99,99},
-							{99,99,99,99,99,99,99,99,99,99,99,99},
-							{14,14,14,14,14,14,14,14,14,12,14,14},
-							{99,99,99,99,99,99,99,99,99,99,99,99},
-							{99,99,99,99,99,99,99,99,99,99,99,99},
-							{99,99,99,99,99,99,99,99,99,99,99,99}};
+int tabla [16][14] = 	   {{1,3,5,6,7,8,9,10,11,14,13,0,99},
+							{1,1,2,2,2,2,2,2,2,2,2,2,99},
+							{99,99,99,99,99,99,99,99,99,99,99,99,99},
+							{4,3,4,4,4,4,4,4,4,4,4,4,99},
+							{99,99,99,99,99,99,99,99,99,99,99,99,99},
+							{99,99,99,99,99,99,99,99,99,99,99,99,99},
+							{99,99,99,99,99,99,99,99,99,99,99,99,99},
+							{99,99,99,99,99,99,99,99,99,99,99,99,99},
+							{99,99,99,99,99,99,99,99,99,99,99,99,99},
+							{99,99,99,99,99,99,99,99,99,99,99,99,99},
+							{99,99,99,99,99,99,99,99,99,99,99,99,99},
+							{14,14,14,14,14,14,14,14,14,12,14,14,99},
+							{99,99,99,99,99,99,99,99,99,99,99,99,99},
+							{99,99,99,99,99,99,99,99,99,99,99,99,99},
+							{99,99,99,99,99,99,99,99,99,99,99,99,99},
+							{99,99,99,99,99,99,99,99,99,99,99,99,99}};
 int vg_script_desp=0;
+
+/* FUNCIONES PAS */
+void objetivo(void);
+void programa(void);
+void listaSentencias(void);
+void sentencia(void);
+void expresion(void);
+void listaIdentificadores(void);
+void listaExpresiones(void);
+void primaria(void);
+
 
 void procesarScript(char* argv){
 
 FILE * script = fopen(argv, "rb+");
 	if (script != NULL){
 
-
-
-
 		fseek(script, 0L, SEEK_SET);
-
 
 		char c = fgetc(script);
 		vg_script = malloc(sizeof(char));
@@ -46,8 +54,6 @@ FILE * script = fopen(argv, "rb+");
 		vg_size_script = i;
 
 		fclose(script);
-
-
 
 	} else {
 		printf("El Script ingresado es invalido o no tiene permisos para ejecutarlo. \n");
@@ -103,22 +109,22 @@ void inicializarTablaSimbolos(){
 
 	t_simbolo* simbolo=malloc(sizeof(t_simbolo));
 	simbolo->lexema=(char*)strdup("leer");
-	simbolo->token=(char*)strdup("Palabra Reservada");
+	simbolo->token = LEER;
 	list_add(tablaDeSimbolos,simbolo);
 
 	t_simbolo* simbolo2=malloc(sizeof(t_simbolo));
 	simbolo2->lexema=(char*)strdup("escribir");
-	simbolo2->token=(char*)strdup("Palabra Reservada");
+	simbolo2->token = ESCRIBIR;
 	list_add(tablaDeSimbolos,simbolo2);
 
 	t_simbolo* simbolo3=malloc(sizeof(t_simbolo));
 	simbolo3->lexema=(char*)strdup("inicio");
-	simbolo3->token=(char*)strdup("Palabra Reservada");
+	simbolo3->token = INICIO;
 	list_add(tablaDeSimbolos,simbolo3);
 
 	t_simbolo* simbolo4=malloc(sizeof(t_simbolo));
 	simbolo4->lexema=(char*)strdup("fin");
-	simbolo4->token=(char*)strdup("Palabra Reservada");
+	simbolo4->token = FIN;
 	list_add(tablaDeSimbolos,simbolo4);
 }
 
@@ -214,7 +220,7 @@ void agregarIdentificadorATS(char *buffer){
 	if(!list_any_satisfy(tablaDeSimbolos,(void*)perteneceLista)){
 		t_simbolo* simbolo = malloc(sizeof(t_simbolo));
 		simbolo->lexema=(char*)strdup(buffer);
-		simbolo->token=(char*)strdup("Identificador");
+		simbolo->token = ID;
 		list_add(tablaDeSimbolos,simbolo);
 	}
 
@@ -227,7 +233,7 @@ void agregarConstanteATS(char* buffer){
 	if(!list_any_satisfy(tablaDeSimbolos,(void*)perteneceLista)){
 		t_simbolo* simbolo = malloc(sizeof(t_simbolo));
 		simbolo->lexema=(char*)strdup(buffer);
-		simbolo->token=(char*)strdup("Constante");
+		simbolo->token = CONSTANTE;
 		list_add(tablaDeSimbolos,simbolo);
 	}
 }
@@ -406,3 +412,123 @@ void limpiarBuffer(){
 	buffer_desp = 0;
 	vg_estado = 0;
 }
+
+int match(TOKEN uno, TOKEN otro){
+	if(uno == otro) return 1;
+	else return -1;
+}
+
+void errorSintactico(TOKEN t, TOKEN esperado){
+	if(esperado == LEER) printf("ERROR -- Se esperaba IDENTIFICADOR, LEER O ESCRIBIR y se obtuvo %s\n", t);
+	else if(esperado == CONSTANTE) printf("ERROR -- Se esperaba IDENTIFICADOR, CONSTANTE O PARENTESIS IZQUIERDO y se obtuvo %s\n", t);
+	else printf("ERROR -- Se esperaba %d y se obtuvo %s\n", esperado, t);
+	printf("En el desplazamiento: %d\n", buffer_desp);
+}
+
+/* PROCEDIMIENTO DE ANALISIS SINTACTICO*/
+/* <objetivo> -> <programa> FDT */
+void objetivo(void){
+	programa();
+	TOKEN t = scanner();
+	if(!(match(t, FDT))) errorSintactico(t, FDT);
+}
+/* <programa> -> INICIO <listaSentencias> FIN */
+void programa(void){
+	TOKEN t = scanner();
+	if(!(match(t, INICIO))) errorSintactico(t, INICIO);
+	listaSentencias();
+	if(!(match(t, FIN))) errorSintactico(t, FIN);
+}
+/*<listaSentencias> -> <sentencia> {<sentencia>} */
+void listaSentencias(void){
+	sentencia(); /* la primera de la lista de sentencias */
+	TOKEN t;
+
+	while (1) {  /* un ciclo indefinido */
+		switch (t = scanner()) {
+
+		case ID: case LEER: case ESCRIBIR: /* detectó token correcto */
+			sentencia(); /* procesa la secuencia opcional */
+			break;
+
+		default: /*detecto algo incorrecto o FDT */
+		buffer_desp--;
+		return;
+		} /* fin switch */
+	}
+}
+/*<sentencia> -> ID ASIGNACIÓN <expresión> PUNTOYCOMA |
+LEER PARENIZQUIERDO <listaIdentificadores> PARENDERECHO PUNTOYCOMA |
+ESCRIBIR PARENIZQUIERDO <listaExpresiones> PARENDERECHO PUNTOYCOMA */
+void sentencia(void){
+	TOKEN t = scanner();
+	if(!(match(t, ID) || match(t, LEER) || match(t, ESCRIBIR))) errorSintactico(t, LEER);
+
+	if(match(t, ID)){
+		t = scanner();
+		if(!(match(t, ASIGNACION))) errorSintactico(t, ASIGNACION);
+		expresion();
+		t = scanner();
+		if(!(match(t, PUNTOYCOMA))) errorSintactico(t, PUNTOYCOMA);
+	}
+	if(match(t, LEER)){
+		t = scanner();
+		if(!(match(t, PARENIZQUIERDO))) errorSintactico(t, PARENIZQUIERDO);
+		listaIdentificadores();
+		t = scanner();
+		if(!(match(t, PARENDERECHO))) errorSintactico(t, PARENDERECHO);
+		t = scanner();
+		if(!(match(t, PUNTOYCOMA))) errorSintactico(t, PUNTOYCOMA);
+	}
+	if(match(t, ESCRIBIR)){
+		t = scanner();
+		if(!(match(t, PARENIZQUIERDO))) errorSintactico(t, PARENIZQUIERDO);
+		listaExpresiones();
+		t = scanner();
+		if(!(match(t, PARENDERECHO))) errorSintactico(t, PARENDERECHO);
+		t = scanner();
+		if(!(match(t, PUNTOYCOMA))) errorSintactico(t, PUNTOYCOMA);
+	}
+}
+/* <listaIdentificadores> -> ID {COMA ID} */
+void listaIdentificadores(void){
+	TOKEN t = scanner();
+	if(!(match(t, ID))) errorSintactico(t, ID);
+
+	t = scanner();
+	if(match(t, COMA)) listaIdentificadores();
+	else buffer_desp--; /* porque sino lo que hay en t se pierde */
+
+}
+/* <listaExpresiones> -> <expresión> {COMA <expresión>} */
+void listaExpresiones(void){
+	expresion();
+
+	TOKEN t = scanner();
+	if(match(t, COMA))	listaExpresiones();
+	else buffer_desp--; /* porque sino lo que hay en t se pierde */
+
+}
+/* <expresión> -> <primaria> {<operadorAditivo> <primaria>} */
+void expresion(void){
+	primaria();
+	TOKEN t = scanner();
+	if(match(t, SUMA) || match(t, RESTA)) expresion();
+	else buffer_desp--; /* porque sino lo que hay en t se pierde */
+
+}
+/* <primaria> -> ID | CONSTANTE |
+PARENIZQUIERDO <expresión> PARENDERECHO */
+void primaria(void){
+	TOKEN t = scanner();
+	if (!(t == ID || t == CONSTANTE || t == PARENIZQUIERDO)) errorSintactico(t, CONSTANTE);
+
+	else if(t == PARENIZQUIERDO){
+			expresion();
+			t = scanner();
+			if(!(match(t, PARENDERECHO))) errorSintactico(t, PARENDERECHO);
+		 }
+}
+/* <operadorAditivo> -> uno de SUMA RESTA -- esta hecho en expresion*/
+
+
