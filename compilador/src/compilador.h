@@ -41,6 +41,7 @@ void limpiarBuffer();
 void inicializarTablaSimbolos();
 TOKEN scanner();
 void retornoScanner(int valor);
+void parser(void);
 
 
 

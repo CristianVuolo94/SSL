@@ -189,6 +189,10 @@ void retornoScanner(int valor){
 	}
 }
 
+void parser(){
+	objetivo();
+}
+
 int esPalabraReservada(char *buffer){
 
 	int desplazamiento;
@@ -418,10 +422,8 @@ int match(TOKEN uno, TOKEN otro){
 	else return -1;
 }
 
-void errorSintactico(TOKEN t, TOKEN esperado){
-	if(esperado == LEER) printf("ERROR -- Se esperaba IDENTIFICADOR, LEER O ESCRIBIR y se obtuvo %s\n", t);
-	else if(esperado == CONSTANTE) printf("ERROR -- Se esperaba IDENTIFICADOR, CONSTANTE O PARENTESIS IZQUIERDO y se obtuvo %s\n", t);
-	else printf("ERROR -- Se esperaba %d y se obtuvo %s\n", esperado, t);
+void errorSintactico(){
+	printf("ERROR SINTACTICO\n");
 	printf("En el desplazamiento: %d\n", buffer_desp);
 }
 
@@ -430,14 +432,14 @@ void errorSintactico(TOKEN t, TOKEN esperado){
 void objetivo(void){
 	programa();
 	TOKEN t = scanner();
-	if(!(match(t, FDT))) errorSintactico(t, FDT);
+	if(!(match(t, FDT))) errorSintactico();
 }
 /* <programa> -> INICIO <listaSentencias> FIN */
 void programa(void){
 	TOKEN t = scanner();
-	if(!(match(t, INICIO))) errorSintactico(t, INICIO);
+	if(!(match(t, INICIO))) errorSintactico();
 	listaSentencias();
-	if(!(match(t, FIN))) errorSintactico(t, FIN);
+	if(!(match(t, FIN))) errorSintactico();
 }
 /*<listaSentencias> -> <sentencia> {<sentencia>} */
 void listaSentencias(void){
@@ -462,38 +464,38 @@ LEER PARENIZQUIERDO <listaIdentificadores> PARENDERECHO PUNTOYCOMA |
 ESCRIBIR PARENIZQUIERDO <listaExpresiones> PARENDERECHO PUNTOYCOMA */
 void sentencia(void){
 	TOKEN t = scanner();
-	if(!(match(t, ID) || match(t, LEER) || match(t, ESCRIBIR))) errorSintactico(t, LEER);
+	if(!(match(t, ID) || match(t, LEER) || match(t, ESCRIBIR))) errorSintactico();
 
 	if(match(t, ID)){
 		t = scanner();
-		if(!(match(t, ASIGNACION))) errorSintactico(t, ASIGNACION);
+		if(!(match(t, ASIGNACION))) errorSintactico();
 		expresion();
 		t = scanner();
-		if(!(match(t, PUNTOYCOMA))) errorSintactico(t, PUNTOYCOMA);
+		if(!(match(t, PUNTOYCOMA))) errorSintactico();
 	}
 	if(match(t, LEER)){
 		t = scanner();
-		if(!(match(t, PARENIZQUIERDO))) errorSintactico(t, PARENIZQUIERDO);
+		if(!(match(t, PARENIZQUIERDO))) errorSintactico();
 		listaIdentificadores();
 		t = scanner();
-		if(!(match(t, PARENDERECHO))) errorSintactico(t, PARENDERECHO);
+		if(!(match(t, PARENDERECHO))) errorSintactico();
 		t = scanner();
-		if(!(match(t, PUNTOYCOMA))) errorSintactico(t, PUNTOYCOMA);
+		if(!(match(t, PUNTOYCOMA))) errorSintactico();
 	}
 	if(match(t, ESCRIBIR)){
 		t = scanner();
-		if(!(match(t, PARENIZQUIERDO))) errorSintactico(t, PARENIZQUIERDO);
+		if(!(match(t, PARENIZQUIERDO))) errorSintactico();
 		listaExpresiones();
 		t = scanner();
-		if(!(match(t, PARENDERECHO))) errorSintactico(t, PARENDERECHO);
+		if(!(match(t, PARENDERECHO))) errorSintactico();
 		t = scanner();
-		if(!(match(t, PUNTOYCOMA))) errorSintactico(t, PUNTOYCOMA);
+		if(!(match(t, PUNTOYCOMA))) errorSintactico();
 	}
 }
 /* <listaIdentificadores> -> ID {COMA ID} */
 void listaIdentificadores(void){
 	TOKEN t = scanner();
-	if(!(match(t, ID))) errorSintactico(t, ID);
+	if(!(match(t, ID))) errorSintactico();
 
 	t = scanner();
 	if(match(t, COMA)) listaIdentificadores();
@@ -521,12 +523,12 @@ void expresion(void){
 PARENIZQUIERDO <expresión> PARENDERECHO */
 void primaria(void){
 	TOKEN t = scanner();
-	if (!(t == ID || t == CONSTANTE || t == PARENIZQUIERDO)) errorSintactico(t, CONSTANTE);
+	if (!(t == ID || t == CONSTANTE || t == PARENIZQUIERDO)) errorSintactico();
 
 	else if(t == PARENIZQUIERDO){
 			expresion();
 			t = scanner();
-			if(!(match(t, PARENDERECHO))) errorSintactico(t, PARENDERECHO);
+			if(!(match(t, PARENDERECHO))) errorSintactico();
 		 }
 }
 /* <operadorAditivo> -> uno de SUMA RESTA -- esta hecho en expresion*/

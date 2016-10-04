@@ -7,9 +7,11 @@ int main(int argc, char** argv) {
 	procesarScript(argv[1]);
 	inicializarTablaSimbolos();
 
-	while(vg_script[vg_script_desp] != '\0'){
+	/*while(vg_script[vg_script_desp] != '\0'){
 		retornoScanner(scanner());
-	}
+	}*/
+
+	parser();
 
 
 /*	acordarse de liberar lista(tabla) */
