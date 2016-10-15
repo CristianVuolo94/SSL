@@ -2,7 +2,9 @@
 #include "compilador.h"
 int vg_estado = 0;
 char buffer[35];
+char otroBuffer[35];
 int buffer_desp = 0;
+int contador = 1;
 int tabla [16][14] = 	   {{1,3,5,6,7,8,9,10,11,14,13,0,99},
 							{1,1,2,2,2,2,2,2,2,2,2,2,99},
 							{99,99,99,99,99,99,99,99,99,99,99,99,99},
@@ -25,11 +27,15 @@ int vg_script_desp=0;
 void objetivo(void);
 void programa(void);
 void listaSentencias(void);
-void sentencia(void);
+void sentencia(TOKEN t);
 void expresion(void);
 void listaIdentificadores(void);
 void listaExpresiones(void);
 void primaria(void);
+/* void identificador(void);  */
+REG_EXPRESION procesarCte(void);
+void generar(char* instruccion, char* unaExpresion, char* otraExpresion, char* extra);
+char * gen_infijo(void);
 
 
 void procesarScript(char* argv){
@@ -61,8 +67,14 @@ FILE * script = fopen(argv, "rb+");
 
 	}
 }
-
-
+void lawea(char *prueba){
+	int i = 0;
+	while(prueba[i] != '\0'){
+		vg_script = realloc(vg_script, (i+1) * sizeof(char));
+		vg_script[i] = prueba[i];
+		i++;
+	}
+}
 
 int validarNombreScript(char * nombreScript){
 
@@ -211,6 +223,7 @@ int	esIdentificadorCorreto(char *buffer){
 	if(strlen(buffer)>32){
 		return 0;
 	}
+	strcpy(otroBuffer, buffer);
 	return 1;
 
 }
@@ -226,6 +239,7 @@ void agregarIdentificadorATS(char *buffer){
 		simbolo->lexema=(char*)strdup(buffer);
 		simbolo->token = ID;
 		list_add(tablaDeSimbolos,simbolo);
+		generar("Declara", buffer, "", "Entera");
 	}
 
 }
@@ -240,13 +254,21 @@ void agregarConstanteATS(char* buffer){
 		simbolo->token = CONSTANTE;
 		list_add(tablaDeSimbolos,simbolo);
 	}
+
+/*	int i = 0;
+	while(buffer[i] != '\0'){
+		otroBuffer[i] = buffer[i];
+		i++;
+	}
+	otroBuffer[i] = '\0'; */
+	strcpy(otroBuffer, buffer);
 }
 
 
 TOKEN scanner(){
 
 	while(1){
-
+/*		printf("vg_script[%d]: %c\n", vg_script_desp, vg_script[vg_script_desp]); */
 		vg_estado = tabla[vg_estado][columna(vg_script[vg_script_desp])];
 /*		se ingresó un numero o letra */
 		if(vg_estado == 1){
@@ -290,7 +312,7 @@ TOKEN scanner(){
 			}
 
 
-			if(esIdentificadorCorreto(buffer)==1){
+			if(esIdentificadorCorreto(buffer)==1){ /*meter buffer de id para generar instruccion*/
 				agregarIdentificadorATS(buffer);
 				limpiarBuffer();
 				return ID;
@@ -419,118 +441,205 @@ void limpiarBuffer(){
 
 int match(TOKEN uno, TOKEN otro){
 	if(uno == otro) return 1;
-	else return -1;
+	else return 0;
 }
 
-void errorSintactico(){
-	printf("ERROR SINTACTICO\n");
-	printf("En el desplazamiento: %d\n", buffer_desp);
+void errorSintactico(int a){
+	printf("ERROR SINTACTICO %d\n", a);
+	printf("En el desplazamiento: %d\n", vg_script_desp);
 }
 
 /* PROCEDIMIENTO DE ANALISIS SINTACTICO*/
-/* <objetivo> -> <programa> FDT */
+/* <objetivo> -> <programa> FDT #terminar*/
 void objetivo(void){
 	programa();
 	TOKEN t = scanner();
-	if(!(match(t, FDT))) errorSintactico();
+	if(!(match(t, FDT))) errorSintactico(1);
 }
-/* <programa> -> INICIO <listaSentencias> FIN */
+/* <programa> -> #comenzar INICIO <listaSentencias> FIN */
 void programa(void){
 	TOKEN t = scanner();
-	if(!(match(t, INICIO))) errorSintactico();
+	if(!(match(t, INICIO))) errorSintactico(2);
 	listaSentencias();
-	if(!(match(t, FIN))) errorSintactico();
+	t = scanner();
+	if(!(match(t, FIN))) errorSintactico(3);
+	else generar("Detiene", "", "", "");
 }
 /*<listaSentencias> -> <sentencia> {<sentencia>} */
 void listaSentencias(void){
-	sentencia(); /* la primera de la lista de sentencias */
-	TOKEN t;
+	TOKEN t = scanner();
+	sentencia(t); /* la primera de la lista de sentencias */
 
 	while (1) {  /* un ciclo indefinido */
 		switch (t = scanner()) {
 
-		case ID: case LEER: case ESCRIBIR: /* detectó token correcto */
-			sentencia(); /* procesa la secuencia opcional */
+		case ID:
+			sentencia(ID);
+			break;
+		case LEER:
+			sentencia(LEER);
+			break;
+		case ESCRIBIR:
+			sentencia(ESCRIBIR);
 			break;
 
 		default: /*detecto algo incorrecto o FDT */
-		buffer_desp--;
+		vg_script_desp -=3;
 		return;
 		} /* fin switch */
 	}
 }
-/*<sentencia> -> ID ASIGNACIÓN <expresión> PUNTOYCOMA |
+/*<sentencia> -> ID ASIGNACIÓN <expresión> #asignar PUNTOYCOMA |
 LEER PARENIZQUIERDO <listaIdentificadores> PARENDERECHO PUNTOYCOMA |
 ESCRIBIR PARENIZQUIERDO <listaExpresiones> PARENDERECHO PUNTOYCOMA */
-void sentencia(void){
-	TOKEN t = scanner();
-	if(!(match(t, ID) || match(t, LEER) || match(t, ESCRIBIR))) errorSintactico();
+void sentencia(TOKEN t){
+
+	if(!(match(t, ID) || match(t, LEER) || match(t, ESCRIBIR))) errorSintactico(4);
 
 	if(match(t, ID)){
+		char *infijo = gen_infijo();
 		t = scanner();
-		if(!(match(t, ASIGNACION))) errorSintactico();
+		if(!(match(t, ASIGNACION))) errorSintactico(5);
 		expresion();
 		t = scanner();
-		if(!(match(t, PUNTOYCOMA))) errorSintactico();
+		if(!(match(t, PUNTOYCOMA))) errorSintactico(6);
+		else generar("Almacena", otroBuffer, infijo, "");
 	}
 	if(match(t, LEER)){
 		t = scanner();
-		if(!(match(t, PARENIZQUIERDO))) errorSintactico();
+		if(!(match(t, PARENIZQUIERDO))) errorSintactico(7);
 		listaIdentificadores();
 		t = scanner();
-		if(!(match(t, PARENDERECHO))) errorSintactico();
+		if(!(match(t, PARENDERECHO))) errorSintactico(8);
 		t = scanner();
-		if(!(match(t, PUNTOYCOMA))) errorSintactico();
+		if(!(match(t, PUNTOYCOMA))) errorSintactico(9);
 	}
 	if(match(t, ESCRIBIR)){
 		t = scanner();
-		if(!(match(t, PARENIZQUIERDO))) errorSintactico();
+		if(!(match(t, PARENIZQUIERDO))) errorSintactico(10);
 		listaExpresiones();
 		t = scanner();
-		if(!(match(t, PARENDERECHO))) errorSintactico();
+		if(!(match(t, PARENDERECHO))) errorSintactico(11);
 		t = scanner();
-		if(!(match(t, PUNTOYCOMA))) errorSintactico();
+		if(!(match(t, PUNTOYCOMA))) errorSintactico(12);
 	}
 }
-/* <listaIdentificadores> -> ID {COMA ID} */
-void listaIdentificadores(void){
+/* <listaIdentificadores> -> ID {COMA ID} -- <ID> #leer_id {COMA <ID> #leer_id} */
+void listaIdentificadores(){
 	TOKEN t = scanner();
-	if(!(match(t, ID))) errorSintactico();
+	if(!(match(t, ID))) errorSintactico(13);
+	else generar("Leer", otroBuffer, "", "");
 
 	t = scanner();
 	if(match(t, COMA)) listaIdentificadores();
-	else buffer_desp--; /* porque sino lo que hay en t se pierde */
+	else vg_script_desp--; /* porque sino lo que hay en t se pierde */
 
 }
-/* <listaExpresiones> -> <expresión> {COMA <expresión>} */
-void listaExpresiones(void){
+/* <listaExpresiones> -> <expresión> #escribir_exp {COMA <expresión> #escribir_exp} */
+void listaExpresiones(){
 	expresion();
+	generar("Escribir", otroBuffer, "", "");
 
 	TOKEN t = scanner();
 	if(match(t, COMA))	listaExpresiones();
-	else buffer_desp--; /* porque sino lo que hay en t se pierde */
+	else vg_script_desp--; /* porque sino lo que hay en t se pierde */
 
 }
-/* <expresión> -> <primaria> {<operadorAditivo> <primaria>} */
-void expresion(void){
+/* <expresión> -> <primaria> {<operadorAditivo> <primaria> #gen_infijo} */
+void expresion(){
 	primaria();
-	TOKEN t = scanner();
-	if(match(t, SUMA) || match(t, RESTA)) expresion();
-	else buffer_desp--; /* porque sino lo que hay en t se pierde */
+	TOKEN t;
+	REG_EXPRESION infijo;
+
+	while(1){
+		t = scanner();
+		if(match(t, SUMA) || match(t, RESTA)){
+			/* capaz habria que meter todo esto en una funcion para que quede mas prolijo */
+
+			infijo.nombre = gen_infijo();
+			primaria();
+			char * temp = malloc(sizeof(char)*10);
+			strcpy(temp, "temp&");
+			char cont[10];
+			sprintf(cont, "%d", contador); /* pasa a char lo que hay en contador que es int */
+			strcat(temp, cont); /* asi se genera temp&1, temp&2, etc */
+			contador++;
+			if(t==SUMA) generar("Suma", infijo.nombre, otroBuffer, temp);
+			else generar("Resta", infijo.nombre, otroBuffer, temp);
+
+			memcpy(otroBuffer, temp, 34);
+		} else{
+			vg_script_desp--;
+			return;
+		}
+	}
 
 }
-/* <primaria> -> ID | CONSTANTE |
+/* <primaria> -> ID -- <ID> | CONSTANTE #procesar_cte|
 PARENIZQUIERDO <expresión> PARENDERECHO */
-void primaria(void){
+void primaria(){
 	TOKEN t = scanner();
-	if (!(t == ID || t == CONSTANTE || t == PARENIZQUIERDO)) errorSintactico();
 
-	else if(t == PARENIZQUIERDO){
+	switch(t) {
+		case ID:
+/*			identificador();    esta preguntando si el id esta en la lista y siempre va a estar porque se
+								agrega en el scanner */
+			break;
+		case CONSTANTE:
+			procesarCte();
+			break;
+		case PARENIZQUIERDO: {
 			expresion();
 			t = scanner();
-			if(!(match(t, PARENDERECHO))) errorSintactico();
-		 }
+			if(!(match(t, PARENDERECHO))) errorSintactico(15);
+			break;
+		}
+		default:
+			errorSintactico(14);
+	}
 }
-/* <operadorAditivo> -> uno de SUMA RESTA -- esta hecho en expresion*/
+/* <operadorAditivo> -> SUMA #procesar_op | RESTA #procesar_op -- esta hecho en expresion*/
 
+/* <ID> -> ID #procesar_id */
 
+/* NO SIRVE PARA NADA -- esta hecho en el scanner cuando agrega a la lista
+   void identificador(){
+	bool perteneceLista (t_simbolo* simbolo) {return strcmp( simbolo->lexema,buffer) == 0 ; }
+	if(!list_any_satisfy(tablaDeSimbolos,(void*)perteneceLista)){
+		generar("Declara", otroBuffer, "", "Entera");
+	}
+} */
+
+REG_EXPRESION procesarCte(){
+	REG_EXPRESION cte;
+
+	cte.clase = CONSTANTE;
+	cte.valor = malloc(sizeof(char)*10);
+	sscanf (otroBuffer, "%s", cte.valor);
+
+	return cte;
+}
+
+void generar(char* instruccion, char* unaExpresion, char* otraExpresion, char* extra){
+
+	if(strcmp(instruccion, "Declara") == 0){
+		printf("Declara %s, %s\n", unaExpresion, extra);
+	}
+	if(strcmp(instruccion, "Suma") == 0 || strcmp(instruccion, "Resta") == 0){
+		printf("%s %s, %s, %s\n", instruccion, unaExpresion, otraExpresion, extra);
+	}
+	if(strcmp(instruccion, "Leer") == 0 || strcmp(instruccion, "Escribir") == 0){
+		printf("%s %s\n", instruccion, unaExpresion); /* leer A \n leer B || leer A, B */
+	}
+	if(strcmp(instruccion, "Almacena") == 0){
+		printf("%s %s, %s\n", instruccion, unaExpresion, otraExpresion);
+	}
+	if(strcmp(instruccion, "Detiene") == 0) printf("Detiene\n");
+}
+
+char * gen_infijo(){
+	/* agarra el ID o CTE que esta en otroBuffer y lo guarda en un registro
+	  para despues generar suma o resta -- Al pedo hacer un registro me parece	 */
+	char * infijo = strdup(otroBuffer);
+	return infijo;
+}

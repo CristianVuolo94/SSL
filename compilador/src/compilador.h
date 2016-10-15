@@ -14,6 +14,7 @@
 #include <ctype.h>
 #include <commons/string.h>
 #include <commons/collections/list.h>
+#include <regex.h>
 
 typedef enum {
 INICIO, FIN, LEER, ESCRIBIR, ID, CONSTANTE, PARENIZQUIERDO,
@@ -25,6 +26,11 @@ typedef struct{
 	char* lexema;
 }t_simbolo;
 
+typedef struct{
+	char* nombre;
+	TOKEN clase;
+	char* valor;
+}REG_EXPRESION;
 
 /*             VARIABLES GLOBALES								*/
 char* vg_script;
@@ -42,7 +48,6 @@ void inicializarTablaSimbolos();
 TOKEN scanner();
 void retornoScanner(int valor);
 void parser(void);
-
-
+void lawea(char * prueba);
 
 #endif /* COMPILADOR_H_ */
