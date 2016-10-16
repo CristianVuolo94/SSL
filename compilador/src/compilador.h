@@ -37,11 +37,13 @@ char* vg_script;
 int vg_size_script;
 extern int vg_script_desp;
 
+FILE * salida;
 
 t_list* tablaDeSimbolos;
 
 void validaciones(int argc, char * argv);
 void procesarScript(char * argv);
+void inicializarArchivoSalida(char*ruta);
 int columna(char c);
 void limpiarBuffer();
 void inicializarTablaSimbolos();

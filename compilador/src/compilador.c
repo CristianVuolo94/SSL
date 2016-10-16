@@ -5,7 +5,7 @@ char buffer[35];
 char otroBuffer[35];
 int buffer_desp = 0;
 int contador = 1;
-int tabla [16][14] = 	   {{1,3,5,6,7,8,9,10,11,14,13,0,99},
+int tabla [16][14] = 	   {{1,3,5,6,7,8,9,10,11,14,13,0,14},
 							{1,1,2,2,2,2,2,2,2,2,2,2,99},
 							{99,99,99,99,99,99,99,99,99,99,99,99,99},
 							{4,3,4,4,4,4,4,4,4,4,4,4,99},
@@ -93,6 +93,9 @@ int validarNombreScript(char * nombreScript){
 
 	return 0;
 
+}
+void inicializarArchivoSalida(char* ruta){
+	salida=fopen(ruta,"w");
 }
 
 
@@ -239,7 +242,7 @@ void agregarIdentificadorATS(char *buffer){
 		simbolo->lexema=(char*)strdup(buffer);
 		simbolo->token = ID;
 		list_add(tablaDeSimbolos,simbolo);
-		generar("Declara", buffer, "", "Entera");
+		generar("Declara", buffer, "\0", "Entera");
 	}
 
 }
@@ -264,11 +267,14 @@ void agregarConstanteATS(char* buffer){
 	strcpy(otroBuffer, buffer);
 }
 
-
+void errorSemantico(){
+	printf("ERROR SEMANTICO\n");
+	printf("En el desplazamiento: %d\n", vg_script_desp);
+}
 TOKEN scanner(){
 
 	while(1){
-/*		printf("vg_script[%d]: %c\n", vg_script_desp, vg_script[vg_script_desp]); */
+		printf("vg_script[%d]: %c\n", vg_script_desp, vg_script[vg_script_desp]);
 		vg_estado = tabla[vg_estado][columna(vg_script[vg_script_desp])];
 /*		se ingresó un numero o letra */
 		if(vg_estado == 1){
@@ -336,7 +342,12 @@ TOKEN scanner(){
 		}
 
 /*		error lexico */
-		if(vg_estado == 14 || vg_estado == 99) return -1;
+		if(vg_estado == 14 || vg_estado == 99){
+			errorSemantico();
+			limpiarBuffer();
+			vg_script_desp++;
+			scanner();
+		}
 
 
 		if((vg_estado > 4 && vg_estado < 11) || (vg_estado == 12)){
@@ -425,9 +436,10 @@ int columna(char c){
 	case '\n':
 		return 11;
 		break;
+	default:
+		return 12;
 	}
 
-	return -1;
 }
 
 void limpiarBuffer(){
@@ -463,7 +475,7 @@ void programa(void){
 	listaSentencias();
 	t = scanner();
 	if(!(match(t, FIN))) errorSintactico(3);
-	else generar("Detiene", "", "", "");
+	else generar("Detiene", "\0", "\0", "\0");
 }
 /*<listaSentencias> -> <sentencia> {<sentencia>} */
 void listaSentencias(void){
@@ -503,7 +515,7 @@ void sentencia(TOKEN t){
 		expresion();
 		t = scanner();
 		if(!(match(t, PUNTOYCOMA))) errorSintactico(6);
-		else generar("Almacena", otroBuffer, infijo, "");
+		else generar("Almacena", otroBuffer, infijo, "\0");
 	}
 	if(match(t, LEER)){
 		t = scanner();
@@ -528,7 +540,7 @@ void sentencia(TOKEN t){
 void listaIdentificadores(){
 	TOKEN t = scanner();
 	if(!(match(t, ID))) errorSintactico(13);
-	else generar("Leer", otroBuffer, "", "");
+	else generar("Leer", otroBuffer, "\0", "\0");
 
 	t = scanner();
 	if(match(t, COMA)) listaIdentificadores();
@@ -538,7 +550,8 @@ void listaIdentificadores(){
 /* <listaExpresiones> -> <expresión> #escribir_exp {COMA <expresión> #escribir_exp} */
 void listaExpresiones(){
 	expresion();
-	generar("Escribir", otroBuffer, "", "");
+	generar("Escribir", otroBuffer, "\0", "\0");
+
 
 	TOKEN t = scanner();
 	if(match(t, COMA))	listaExpresiones();
@@ -619,6 +632,42 @@ REG_EXPRESION procesarCte(){
 
 	return cte;
 }
+void depurar(char* salida){
+	int desplazamiento=0;
+	while(salida[desplazamiento] != '\0'){
+		salida[desplazamiento] = '\0';
+		desplazamiento++;
+	}
+
+}
+
+char* formatoSalida(char* instruccion, char* unaExpresion, char* otraExpresion, char* extra){
+
+	char* salida=malloc(sizeof(char)*(strlen(instruccion)+strlen(unaExpresion)+strlen(otraExpresion)+strlen(extra))+5);
+	depurar(salida);
+
+	strcat(salida,instruccion);
+
+	if(strlen(unaExpresion)>0){
+		strcat(salida," ");
+	}
+	strcat(salida,unaExpresion);
+
+	if(strlen(otraExpresion)>0){
+			strcat(salida," ");
+		}
+	strcat(salida,otraExpresion);
+
+	if(strlen(extra)>0){
+			strcat(salida," ");
+		}
+	strcat(salida,extra);
+
+	strcat(salida,"\n");
+
+
+	return salida;
+}
 
 void generar(char* instruccion, char* unaExpresion, char* otraExpresion, char* extra){
 
@@ -629,12 +678,19 @@ void generar(char* instruccion, char* unaExpresion, char* otraExpresion, char* e
 		printf("%s %s, %s, %s\n", instruccion, unaExpresion, otraExpresion, extra);
 	}
 	if(strcmp(instruccion, "Leer") == 0 || strcmp(instruccion, "Escribir") == 0){
-		printf("%s %s\n", instruccion, unaExpresion); /* leer A \n leer B || leer A, B */
+		printf("%s %s\n", instruccion, unaExpresion);  // leer A \n leer B || leer A, B
 	}
 	if(strcmp(instruccion, "Almacena") == 0){
 		printf("%s %s, %s\n", instruccion, unaExpresion, otraExpresion);
 	}
 	if(strcmp(instruccion, "Detiene") == 0) printf("Detiene\n");
+/*
+
+	char* salidaArchivo =formatoSalida(instruccion,unaExpresion,otraExpresion,extra);
+	fwrite(salidaArchivo,strlen(salidaArchivo),1,salida);
+	free(salidaArchivo);
+	*/
+
 }
 
 char * gen_infijo(){
