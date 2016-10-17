@@ -50,6 +50,6 @@ void inicializarTablaSimbolos();
 TOKEN scanner();
 void retornoScanner(int valor);
 void parser(void);
-void lawea(char * prueba);
+void pruebas(char * prueba);
 
 #endif /* COMPILADOR_H_ */

@@ -5,8 +5,10 @@ char buffer[35];
 char otroBuffer[35];
 int buffer_desp = 0;
 int contador = 1;
+int banderaError=0;
+char*rutaArchivo;
 int tabla [16][14] = 	   {{1,3,5,6,7,8,9,10,11,14,13,0,14},
-							{1,1,2,2,2,2,2,2,2,2,2,2,99},
+							{1,1,2,2,2,2,2,2,2,2,2,2,2},
 							{99,99,99,99,99,99,99,99,99,99,99,99,99},
 							{4,3,4,4,4,4,4,4,4,4,4,4,99},
 							{99,99,99,99,99,99,99,99,99,99,99,99,99},
@@ -67,7 +69,7 @@ FILE * script = fopen(argv, "rb+");
 
 	}
 }
-void lawea(char *prueba){
+void pruebas(char *prueba){
 	int i = 0;
 	while(prueba[i] != '\0'){
 		vg_script = realloc(vg_script, (i+1) * sizeof(char));
@@ -96,6 +98,8 @@ int validarNombreScript(char * nombreScript){
 }
 void inicializarArchivoSalida(char* ruta){
 	salida=fopen(ruta,"w");
+	rutaArchivo= (char*) strdup(ruta);
+
 }
 
 
@@ -258,23 +262,30 @@ void agregarConstanteATS(char* buffer){
 		list_add(tablaDeSimbolos,simbolo);
 	}
 
-/*	int i = 0;
-	while(buffer[i] != '\0'){
-		otroBuffer[i] = buffer[i];
-		i++;
-	}
-	otroBuffer[i] = '\0'; */
 	strcpy(otroBuffer, buffer);
 }
-
+void errorArchivoSalida(){
+	fclose(salida);
+	salida=fopen(rutaArchivo,"w");
+	char* mensaje =(char*) strdup("Hubo un error en la compilacion.\n");
+	fwrite(mensaje,strlen(mensaje),1,salida);
+	free(mensaje);
+}
 void errorSemantico(){
 	printf("ERROR SEMANTICO\n");
 	printf("En el desplazamiento: %d\n", vg_script_desp);
+	if(banderaError==0){
+		banderaError=1;
+		errorArchivoSalida();
+	}
 }
+
+
+
 TOKEN scanner(){
 
 	while(1){
-		printf("vg_script[%d]: %c\n", vg_script_desp, vg_script[vg_script_desp]);
+/*		printf("vg_script[%d]: %c\n", vg_script_desp, vg_script[vg_script_desp]);*/
 		vg_estado = tabla[vg_estado][columna(vg_script[vg_script_desp])];
 /*		se ingresó un numero o letra */
 		if(vg_estado == 1){
@@ -345,8 +356,8 @@ TOKEN scanner(){
 		if(vg_estado == 14 || vg_estado == 99){
 			errorSemantico();
 			limpiarBuffer();
-			vg_script_desp++;
-			scanner();
+/*		vg_script_desp++;
+		scanner();*/
 		}
 
 
@@ -459,6 +470,11 @@ int match(TOKEN uno, TOKEN otro){
 void errorSintactico(int a){
 	printf("ERROR SINTACTICO %d\n", a);
 	printf("En el desplazamiento: %d\n", vg_script_desp);
+	if(banderaError==0){
+			banderaError=1;
+			errorArchivoSalida();
+
+		}
 }
 
 /* PROCEDIMIENTO DE ANALISIS SINTACTICO*/
@@ -670,7 +686,7 @@ char* formatoSalida(char* instruccion, char* unaExpresion, char* otraExpresion, 
 }
 
 void generar(char* instruccion, char* unaExpresion, char* otraExpresion, char* extra){
-
+/*
 	if(strcmp(instruccion, "Declara") == 0){
 		printf("Declara %s, %s\n", unaExpresion, extra);
 	}
@@ -678,24 +694,24 @@ void generar(char* instruccion, char* unaExpresion, char* otraExpresion, char* e
 		printf("%s %s, %s, %s\n", instruccion, unaExpresion, otraExpresion, extra);
 	}
 	if(strcmp(instruccion, "Leer") == 0 || strcmp(instruccion, "Escribir") == 0){
-		printf("%s %s\n", instruccion, unaExpresion);  // leer A \n leer B || leer A, B
+		printf("%s %s\n", instruccion, unaExpresion);   leer A \n leer B || leer A, B
 	}
 	if(strcmp(instruccion, "Almacena") == 0){
 		printf("%s %s, %s\n", instruccion, unaExpresion, otraExpresion);
 	}
 	if(strcmp(instruccion, "Detiene") == 0) printf("Detiene\n");
-/*
-
-	char* salidaArchivo =formatoSalida(instruccion,unaExpresion,otraExpresion,extra);
-	fwrite(salidaArchivo,strlen(salidaArchivo),1,salida);
-	free(salidaArchivo);
-	*/
+*/
+	if(banderaError==0){
+		char* salidaArchivo =formatoSalida(instruccion,unaExpresion,otraExpresion,extra);
+		fwrite(salidaArchivo,strlen(salidaArchivo),1,salida);
+		free(salidaArchivo);
+	}
 
 }
 
 char * gen_infijo(){
 	/* agarra el ID o CTE que esta en otroBuffer y lo guarda en un registro
 	  para despues generar suma o resta -- Al pedo hacer un registro me parece	 */
-	char * infijo = strdup(otroBuffer);
+	char * infijo = (char*) strdup(otroBuffer);
 	return infijo;
 }
