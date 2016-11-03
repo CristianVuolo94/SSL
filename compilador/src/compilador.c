@@ -3,9 +3,11 @@
 int vg_estado = 0;
 char buffer[35];
 char otroBuffer[35];
+int tamanioBuffer = 0;
 int buffer_desp = 0;
 int contador = 1;
 int banderaError=0;
+
 char*rutaArchivo;
 int tabla [16][14] = 	   {{1,3,5,6,7,8,9,10,11,14,13,0,14},
 							{1,1,2,2,2,2,2,2,2,2,2,2,2},
@@ -76,6 +78,7 @@ void pruebas(char *prueba){
 		vg_script[i] = prueba[i];
 		i++;
 	}
+	vg_script[i]='\0';
 }
 
 int validarNombreScript(char * nombreScript){
@@ -246,7 +249,7 @@ void agregarIdentificadorATS(char *buffer){
 		simbolo->lexema=(char*)strdup(buffer);
 		simbolo->token = ID;
 		list_add(tablaDeSimbolos,simbolo);
-		generar("Declara", buffer, "\0", "Entera");
+//puta		generar("Declara", buffer, "\0", "Entera");
 	}
 
 }
@@ -271,12 +274,25 @@ void errorArchivoSalida(){
 	fwrite(mensaje,strlen(mensaje),1,salida);
 	free(mensaje);
 }
+int contadorLinea(){
+	int contador = 0;
+	int cantidadLineas = 0;
+	while(contador!=vg_script_desp){
+		if(vg_script[contador]=='\n'){
+			cantidadLineas++;
+		}
+		contador++;
+	}
+	return cantidadLineas;
+
+
+}
 void errorSemantico(){
 	printf("ERROR SEMANTICO\n");
 	printf("En el desplazamiento: %d\n", vg_script_desp);
 	if(banderaError==0){
 		banderaError=1;
-		errorArchivoSalida();
+//puta		errorArchivoSalida();
 	}
 }
 
@@ -309,21 +325,25 @@ TOKEN scanner(){
 
 				if(strcmp(buffer,"leer")==0){
 					limpiarBuffer();
+					tamanioBuffer = 4;
 					return LEER;
 				}
 
 				if(strcmp(buffer,"escribir")==0){
 					limpiarBuffer();
+					tamanioBuffer = 8;
 					return ESCRIBIR;
 				}
 
 				if(strcmp(buffer,"inicio")==0){
 					limpiarBuffer();
+					tamanioBuffer = 6;
 					return INICIO;
 				}
 
 				if(strcmp(buffer,"fin")==0){
 					limpiarBuffer();
+					tamanioBuffer = 3;
 					return FIN;
 				}
 			}
@@ -331,6 +351,7 @@ TOKEN scanner(){
 
 			if(esIdentificadorCorreto(buffer)==1){ /*meter buffer de id para generar instruccion*/
 				agregarIdentificadorATS(buffer);
+				tamanioBuffer = strlen(buffer);
 				limpiarBuffer();
 				return ID;
 			}
@@ -342,6 +363,7 @@ TOKEN scanner(){
 /*		se ingresó una constante numerica */
 		if(vg_estado == 4){
 			agregarConstanteATS(buffer);
+			tamanioBuffer = strlen(buffer);
 			limpiarBuffer();
 			return CONSTANTE;
 
@@ -349,6 +371,8 @@ TOKEN scanner(){
 
 /*		se detectó FDT */
 		if(vg_estado == 13){
+			vg_estado=0;//puta
+			tamanioBuffer = 1;
 			return FDT;
 		}
 
@@ -356,8 +380,6 @@ TOKEN scanner(){
 		if(vg_estado == 14 || vg_estado == 99){
 			errorSemantico();
 			limpiarBuffer();
-/*		vg_script_desp++;
-		scanner();*/
 		}
 
 
@@ -367,36 +389,43 @@ TOKEN scanner(){
 			if(vg_estado == 5){
 				limpiarBuffer();
 				vg_script_desp++;
+				tamanioBuffer = 1;
 				return SUMA;
 			}
 			if(vg_estado == 6){
 				limpiarBuffer();
 				vg_script_desp++;
+				tamanioBuffer = 1;
 				return RESTA;
 			}
 			if(vg_estado == 7){
 				limpiarBuffer();
 				vg_script_desp++;
+				tamanioBuffer = 1;
 				return PARENIZQUIERDO;
 			}
 			if(vg_estado == 8){
 				limpiarBuffer();
 				vg_script_desp++;
+				tamanioBuffer = 1;
 				return PARENDERECHO;
 			}
 			if(vg_estado == 9){
 				limpiarBuffer();
 				vg_script_desp++;
+				tamanioBuffer = 1;
 				return COMA;
 			}
 			if(vg_estado == 10){
 				limpiarBuffer();
 				vg_script_desp++;
+				tamanioBuffer = 1;
 				return PUNTOYCOMA;
 			}
 			if(vg_estado == 12){
 				limpiarBuffer();
 				vg_script_desp++;
+				tamanioBuffer = 2;
 				return ASIGNACION;
 			}
 		}
@@ -467,12 +496,49 @@ int match(TOKEN uno, TOKEN otro){
 	else return 0;
 }
 
+
 void errorSintactico(int a){
-	printf("ERROR SINTACTICO %d\n", a);
-	printf("En el desplazamiento: %d\n", vg_script_desp);
+	switch(a){
+	case 1:{
+		printf("ERROR SINTACTICO: No se matcheo FDT en la linea : %d. \n", contadorLinea() );
+		break;
+	}
+	case 2:{
+		printf("ERROR SINTACTICO: No se matcheo inicio en la linea : %d. \n", contadorLinea() );
+		break;
+	}
+	case 3:{
+		printf("ERROR SINTACTICO: No se matcheo fin en la linea : %d. \n", contadorLinea() );
+		break;
+	}
+	case 4:{
+		printf("ERROR SINTACTICO: No se matcheo identificador / leer / escribir en la linea : %d. \n", contadorLinea() );
+		break;
+	}
+	case 5:{
+		printf("ERROR SINTACTICO: No se matcheo asignacion en la linea : %d. \n", contadorLinea() );
+		break;
+	}
+	case 6:{
+		printf("ERROR SINTACTICO: No se matcheo ; en la linea : %d. \n", contadorLinea() );
+		break;
+	}
+	case 7:{
+		printf("ERROR SINTACTICO: No se matcheo parentesis izquierdo en la linea : %d. \n", contadorLinea() );
+		break;
+	}
+	case 8:{
+		printf("ERROR SINTACTICO: No se matcheo parentesis derecho  en la linea : %d. \n", contadorLinea() );
+		break;
+	}
+	case 9:{
+		printf("ERROR SINTACTICO: No se matcheo identificador en la linea : %d. \n", contadorLinea() );
+		break;
+	}
+	}
 	if(banderaError==0){
 			banderaError=1;
-			errorArchivoSalida();
+//puta			errorArchivoSalida();
 
 		}
 }
@@ -491,7 +557,7 @@ void programa(void){
 	listaSentencias();
 	t = scanner();
 	if(!(match(t, FIN))) errorSintactico(3);
-	else generar("Detiene", "\0", "\0", "\0");
+//puta	else generar("Detiene", "\0", "\0", "\0");
 }
 /*<listaSentencias> -> <sentencia> {<sentencia>} */
 void listaSentencias(void){
@@ -512,7 +578,7 @@ void listaSentencias(void){
 			break;
 
 		default: /*detecto algo incorrecto o FDT */
-		vg_script_desp -=3;
+		vg_script_desp -=tamanioBuffer;
 		return;
 		} /* fin switch */
 	}
@@ -527,11 +593,12 @@ void sentencia(TOKEN t){
 	if(match(t, ID)){
 		char *infijo = gen_infijo();
 		t = scanner();
-		if(!(match(t, ASIGNACION))) errorSintactico(5);
+		if(!(match(t, ASIGNACION)))
+		errorSintactico(5);
 		expresion();
 		t = scanner();
 		if(!(match(t, PUNTOYCOMA))) errorSintactico(6);
-		else generar("Almacena", otroBuffer, infijo, "\0");
+//puta		else generar("Almacena", otroBuffer, infijo, "\0");
 	}
 	if(match(t, LEER)){
 		t = scanner();
@@ -540,38 +607,38 @@ void sentencia(TOKEN t){
 		t = scanner();
 		if(!(match(t, PARENDERECHO))) errorSintactico(8);
 		t = scanner();
-		if(!(match(t, PUNTOYCOMA))) errorSintactico(9);
+		if(!(match(t, PUNTOYCOMA))) errorSintactico(6);
 	}
 	if(match(t, ESCRIBIR)){
 		t = scanner();
-		if(!(match(t, PARENIZQUIERDO))) errorSintactico(10);
+		if(!(match(t, PARENIZQUIERDO))) errorSintactico(7);
 		listaExpresiones();
 		t = scanner();
-		if(!(match(t, PARENDERECHO))) errorSintactico(11);
+		if(!(match(t, PARENDERECHO))) errorSintactico(8);
 		t = scanner();
-		if(!(match(t, PUNTOYCOMA))) errorSintactico(12);
+		if(!(match(t, PUNTOYCOMA))) errorSintactico(6);
 	}
 }
 /* <listaIdentificadores> -> ID {COMA ID} -- <ID> #leer_id {COMA <ID> #leer_id} */
 void listaIdentificadores(){
 	TOKEN t = scanner();
-	if(!(match(t, ID))) errorSintactico(13);
-	else generar("Leer", otroBuffer, "\0", "\0");
+	if(!(match(t, ID))) errorSintactico(9);
+//puta	else generar("Leer", otroBuffer, "\0", "\0");
 
 	t = scanner();
 	if(match(t, COMA)) listaIdentificadores();
-	else vg_script_desp--; /* porque sino lo que hay en t se pierde */
+	else vg_script_desp -=tamanioBuffer; /* porque sino lo que hay en t se pierde */
 
 }
 /* <listaExpresiones> -> <expresión> #escribir_exp {COMA <expresión> #escribir_exp} */
 void listaExpresiones(){
 	expresion();
-	generar("Escribir", otroBuffer, "\0", "\0");
+//puta	generar("Escribir", otroBuffer, "\0", "\0");
 
 
 	TOKEN t = scanner();
 	if(match(t, COMA))	listaExpresiones();
-	else vg_script_desp--; /* porque sino lo que hay en t se pierde */
+	else vg_script_desp -=tamanioBuffer; /* porque sino lo que hay en t se pierde */
 
 }
 /* <expresión> -> <primaria> {<operadorAditivo> <primaria> #gen_infijo} */
@@ -594,11 +661,11 @@ void expresion(){
 			strcat(temp, cont); /* asi se genera temp&1, temp&2, etc */
 			contador++;
 			if(t==SUMA) generar("Suma", infijo.nombre, otroBuffer, temp);
-			else generar("Resta", infijo.nombre, otroBuffer, temp);
+//puta			else generar("Resta", infijo.nombre, otroBuffer, temp);
 
 			memcpy(otroBuffer, temp, 34);
 		} else{
-			vg_script_desp--;
+			vg_script_desp -=tamanioBuffer;
 			return;
 		}
 	}
@@ -620,7 +687,7 @@ void primaria(){
 		case PARENIZQUIERDO: {
 			expresion();
 			t = scanner();
-			if(!(match(t, PARENDERECHO))) errorSintactico(15);
+			if(!(match(t, PARENDERECHO))) errorSintactico(8);
 			break;
 		}
 		default:
