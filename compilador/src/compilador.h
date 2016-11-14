@@ -51,5 +51,5 @@ TOKEN scanner();
 void retornoScanner(int valor);
 void parser(void);
 void pruebas(char * prueba);
-
+void liberarRecursos();
 #endif /* COMPILADOR_H_ */

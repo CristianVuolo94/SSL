@@ -4,25 +4,22 @@
 int main(int argc, char** argv) {
 
 
-//	validaciones(argc,argv[1]);
-//	procesarScript(argv[1]);
-//	inicializarArchivoSalida(argv[2]);
+	validaciones(argc,argv[1]);
+	procesarScript(argv[1]);
+	inicializarArchivoSalida(argv[2]);
 	inicializarTablaSimbolos();
 
 	/*while(vg_script[vg_script_desp] != '\0'){
 		retornoScanner(scanner());
-	}*/
-	char * prueba = strdup("inicio\na:=4;\nfin");
+	}
+
+	char * prueba = strdup("inicio A :=BB -34+A; fin");
 	pruebas(prueba);
-	puts(vg_script);
+	puts(vg_script);*/
 	parser();
 
+	liberarRecursos();
 
-
-//	acordarse de liberar lista(tabla)
-	free(prueba);
-	free(vg_script);
-//	fclose(salida);
 
 return 0;
 

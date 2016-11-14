@@ -33,6 +33,7 @@ void programa(void);
 void listaSentencias(void);
 void sentencia(TOKEN t);
 void expresion(void);
+int operadorAditivo(TOKEN token);
 void listaIdentificadores(void);
 void listaExpresiones(void);
 void primaria(void);
@@ -102,7 +103,6 @@ int validarNombreScript(char * nombreScript){
 void inicializarArchivoSalida(char* ruta){
 	salida=fopen(ruta,"w");
 	rutaArchivo= (char*) strdup(ruta);
-
 }
 
 
@@ -249,7 +249,7 @@ void agregarIdentificadorATS(char *buffer){
 		simbolo->lexema=(char*)strdup(buffer);
 		simbolo->token = ID;
 		list_add(tablaDeSimbolos,simbolo);
-//puta		generar("Declara", buffer, "\0", "Entera");
+		generar("Declara", buffer, "\0", "Entera");
 	}
 
 }
@@ -269,10 +269,7 @@ void agregarConstanteATS(char* buffer){
 }
 void errorArchivoSalida(){
 	fclose(salida);
-	salida=fopen(rutaArchivo,"w");
-	char* mensaje =(char*) strdup("Hubo un error en la compilacion.\n");
-	fwrite(mensaje,strlen(mensaje),1,salida);
-	free(mensaje);
+	remove(rutaArchivo);
 }
 int contadorLinea(){
 	int contador = 0;
@@ -292,7 +289,7 @@ void errorSemantico(){
 	printf("En el desplazamiento: %d\n", vg_script_desp);
 	if(banderaError==0){
 		banderaError=1;
-//puta		errorArchivoSalida();
+		errorArchivoSalida();
 	}
 }
 
@@ -371,7 +368,7 @@ TOKEN scanner(){
 
 /*		se detectó FDT */
 		if(vg_estado == 13){
-			vg_estado=0;//puta
+			vg_estado=0;
 			tamanioBuffer = 1;
 			return FDT;
 		}
@@ -537,10 +534,9 @@ void errorSintactico(int a){
 	}
 	}
 	if(banderaError==0){
-			banderaError=1;
-//puta			errorArchivoSalida();
-
-		}
+		banderaError=1;
+		errorArchivoSalida();
+	}
 }
 
 /* PROCEDIMIENTO DE ANALISIS SINTACTICO*/
@@ -557,7 +553,7 @@ void programa(void){
 	listaSentencias();
 	t = scanner();
 	if(!(match(t, FIN))) errorSintactico(3);
-//puta	else generar("Detiene", "\0", "\0", "\0");
+	else generar("Detiene", "\0", "\0", "\0");
 }
 /*<listaSentencias> -> <sentencia> {<sentencia>} */
 void listaSentencias(void){
@@ -598,7 +594,7 @@ void sentencia(TOKEN t){
 		expresion();
 		t = scanner();
 		if(!(match(t, PUNTOYCOMA))) errorSintactico(6);
-//puta		else generar("Almacena", otroBuffer, infijo, "\0");
+		else generar("Almacena", otroBuffer, infijo, "\0");
 	}
 	if(match(t, LEER)){
 		t = scanner();
@@ -623,7 +619,7 @@ void sentencia(TOKEN t){
 void listaIdentificadores(){
 	TOKEN t = scanner();
 	if(!(match(t, ID))) errorSintactico(9);
-//puta	else generar("Leer", otroBuffer, "\0", "\0");
+	else generar("Leer", otroBuffer, "\0", "\0");
 
 	t = scanner();
 	if(match(t, COMA)) listaIdentificadores();
@@ -633,7 +629,7 @@ void listaIdentificadores(){
 /* <listaExpresiones> -> <expresión> #escribir_exp {COMA <expresión> #escribir_exp} */
 void listaExpresiones(){
 	expresion();
-//puta	generar("Escribir", otroBuffer, "\0", "\0");
+	generar("Escribir", otroBuffer, "\0", "\0");
 
 
 	TOKEN t = scanner();
@@ -645,31 +641,35 @@ void listaExpresiones(){
 void expresion(){
 	primaria();
 	TOKEN t;
-	REG_EXPRESION infijo;
+/*	REG_EXPRESION infijo;*/
 
 	while(1){
 		t = scanner();
-		if(match(t, SUMA) || match(t, RESTA)){
-			/* capaz habria que meter todo esto en una funcion para que quede mas prolijo */
-
-			infijo.nombre = gen_infijo();
-			primaria();
-			char * temp = malloc(sizeof(char)*10);
-			strcpy(temp, "temp&");
-			char cont[10];
-			sprintf(cont, "%d", contador); /* pasa a char lo que hay en contador que es int */
-			strcat(temp, cont); /* asi se genera temp&1, temp&2, etc */
-			contador++;
-			if(t==SUMA) generar("Suma", infijo.nombre, otroBuffer, temp);
-//puta			else generar("Resta", infijo.nombre, otroBuffer, temp);
-
-			memcpy(otroBuffer, temp, 34);
-		} else{
+		if(!(operadorAditivo(t))){
 			vg_script_desp -=tamanioBuffer;
 			return;
 		}
 	}
 
+}
+int operadorAditivo(TOKEN token){
+	REG_EXPRESION infijo;
+	if(match(token, SUMA) || match(token, RESTA)){
+		infijo.nombre = gen_infijo();
+		primaria();
+		char * temp = malloc(sizeof(char)*10);
+		strcpy(temp, "temp&");
+		char cont[10];
+		sprintf(cont, "%d", contador); /* pasa a char lo que hay en contador que es int */
+		strcat(temp, cont); /* asi se genera temp&1, temp&2, etc */
+		contador++;
+		generar("Declara",temp,"\0","Entera");
+		if(token==SUMA) generar("Suma", infijo.nombre, otroBuffer, temp);
+		else generar("Resta", infijo.nombre, otroBuffer, temp);
+		memcpy(otroBuffer, temp, 34);
+		return 1;
+	}
+	return 0;
 }
 /* <primaria> -> ID -- <ID> | CONSTANTE #procesar_cte|
 PARENIZQUIERDO <expresión> PARENDERECHO */
@@ -706,13 +706,29 @@ void primaria(){
 	}
 } */
 
+
+
+void chequear(char *buffer){
+
+	bool perteneceLista (t_simbolo* simbolo) {return strcmp( simbolo->lexema,buffer) == 0 ; }
+
+	if(!list_any_satisfy(tablaDeSimbolos,(void*)perteneceLista)){
+		t_simbolo* simbolo = malloc(sizeof(t_simbolo));
+		simbolo->lexema=(char*)strdup(buffer);
+		simbolo->token = CONSTANTE;
+		list_add(tablaDeSimbolos,simbolo);
+	}
+
+}
+
+
 REG_EXPRESION procesarCte(){
 	REG_EXPRESION cte;
 
 	cte.clase = CONSTANTE;
 	cte.valor = malloc(sizeof(char)*10);
 	sscanf (otroBuffer, "%s", cte.valor);
-
+	chequear(cte.valor);
 	return cte;
 }
 void depurar(char* salida){
@@ -782,3 +798,19 @@ char * gen_infijo(){
 	char * infijo = (char*) strdup(otroBuffer);
 	return infijo;
 }
+
+void liberaEntradaTabla(t_simbolo* simbolo){
+	free(simbolo->lexema);
+	free(simbolo);
+
+}
+
+void liberarRecursos(){
+	free(vg_script);
+	if(banderaError==0){
+		fclose(salida);
+	}
+	list_destroy_and_destroy_elements(tablaDeSimbolos, (void*)liberaEntradaTabla);
+
+}
+
